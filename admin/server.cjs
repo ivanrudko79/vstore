@@ -121,9 +121,21 @@ async function handler(req, res) {
       try { await run('gh', ['auth', 'status']); } catch { return send(res, 400, { error: 'GitHub CLI не авторизован. Выполните gh auth login.' }); }
       const repo = await run('gh', ['repo', 'view', '--json', 'nameWithOwner', '-q', '.nameWithOwner']).then(r => r.stdout.trim()).catch(() => ''); if (!repo) return send(res, 400, { error: 'Не удалось определить GitHub-репозиторий. Проверьте подключение vstore.' });
       const ix = list.findIndex(a => a.id === id); const today = new Date().toISOString().slice(0,10); const prior = ix >= 0 ? list[ix] : null;
-      const app = { ...(prior || {}), ...input, id, source: source.trim(), distributionPermission: true, status: 'published' }; const tag = app.id + '-' + app.version; const releaseIpa = path.join(uploads, app.id + '-' + app.version + '.ipa'); fs.copyFileSync(ipaPath, releaseIpa);
-      try { await run('gh', ['release', 'view', tag, '--repo', repo]); return send(res, 409, { error: 'Релиз ' + tag + ' уже существует. Для новой IPA измените номер версии; если меняете только описание и скриншоты, используйте «Сохранить изменения».' }); } catch {}
-      const milestones = []; const emit = (step, state, detail='') => milestones.push({ step, state, detail, at: new Date().toISOString() });
+      const app = { ...(prior || {}), ...input, id, source: source.trim(), distributionPermission: true, status: 'published' }; const tag = app.id + '-' + app.version; const releaseIpa = path.join(uploads, app.id + '-' + app.version + '.ipa');
+      const ipaSha = crypto.createHash('sha256').update(fs.readFileSync(ipaPath)).digest('hex'); const milestones = []; const emit = (step, state, detail='') => milestones.push({ step, state, detail, at: new Date().toISOString() });
+      let existingRelease = null;
+      try { const response = await run('gh', ['api', 'repos/' + repo + '/releases/tags/' + encodeURIComponent(tag)]); existingRelease = JSON.parse(response.stdout); }
+      catch (error) { const message = String(error.stderr || error.message); if (!/404|Not Found/i.test(message)) return send(res, 502, { error: 'Не удалось проверить существующий релиз ' + tag + ': ' + message }); }
+      if (existingRelease) {
+        const asset = existingRelease.assets?.find(item => item.name.toLowerCase().endsWith('.ipa'));
+        if (!asset || asset.digest !== 'sha256:' + ipaSha) return send(res, 409, { error: 'Релиз ' + tag + ' уже существует, но загруженный IPA отличается. Укажите новую версию из самого IPA.' });
+        app.downloadUrl = asset.browser_download_url; app.size = asset.size; app.sha256 = ipaSha; app.updatedDate = today; app.addedDate = prior?.addedDate || today; app.changelog = prior?.changelog || input.changelog || [];
+        if (ix >= 0) list[ix] = app; else list.unshift(app);
+        try { fs.writeFileSync(appsPath, JSON.stringify(list, null, 2) + '\n'); emit('Проверка IPA', 'done', (asset.size / 1048576).toFixed(1) + ' МБ'); emit('GitHub Release', 'done', 'Использован существующий релиз ' + tag); emit('Обновление JSON', 'done'); const media = [app.icon, ...app.screenshots].filter(value => /^\/(icons|screenshots)\//.test(value)).map(value => value.slice(1)); await commitFiles('Restore ' + app.name + ' ' + app.version + ' to catalog', ['data/apps.json', ...media]); emit('Git commit и push', 'done', 'GitHub Actions обновит сайт.'); }
+        catch (error) { emit('Git commit и push', 'error', error.message); return send(res, 500, { error: 'Релиз найден, но запись каталога не удалось отправить: ' + error.message, milestones, partial: true }); }
+        send(res, 200, { ok: true, milestones, app, reusedRelease: true }); return;
+      }
+      fs.copyFileSync(ipaPath, releaseIpa);
       try { emit('Проверка IPA', 'done', (fs.statSync(ipaPath).size / 1048576).toFixed(1) + ' МБ'); emit('Создание GitHub Release', 'running'); await run('gh', ['release', 'create', tag, releaseIpa, '--repo', repo, '--title', app.name + ' ' + app.version, '--notes', notes || 'Обновление приложения.']); app.downloadUrl = 'https://github.com/' + repo + '/releases/download/' + tag + '/' + encodeURIComponent(path.basename(releaseIpa)); app.size = fs.statSync(ipaPath).size; app.sha256 = crypto.createHash('sha256').update(fs.readFileSync(ipaPath)).digest('hex'); app.updatedDate = today; app.addedDate = prior?.addedDate || today; app.changelog = [{ version: app.version, date: today, notes: notes || 'Обновление приложения.' }, ...(prior?.changelog || [])]; emit('GitHub Release', 'done', tag); }
       catch (error) { emit('GitHub Release', 'error', error.message); return send(res, 500, { error: 'Ошибка этапа GitHub Release: ' + error.message, milestones }); }
       if (ix >= 0) list[ix] = app; else list.unshift(app);
