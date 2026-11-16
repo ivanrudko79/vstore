@@ -90,7 +90,7 @@ async function handler(req, res) {
       if (ix >= 0) list[ix] = entry; else list.unshift(entry);
       fs.writeFileSync(appsPath, JSON.stringify(list, null, 2) + '\n');
       if (ix >= 0) {
-        try { await run('gh', ['auth', 'status']); const media = [entry.icon, ...entry.screenshots].filter(value => /^\/(icons|screenshots)\//.test(value)).map(value => value.slice(1)); await commitFiles('Update ' + entry.name, ['data/apps.json', ...media]); send(res, 200, { ok: true, apps: list, published: true, message: 'Изменения отправлены в GitHub. Сайт обновится после завершения GitHub Actions.' }); return; }
+        try { await run('gh', ['auth', 'status']); const media = [entry.icon, ...entry.screenshots].filter(value => /^\/(icons|screenshots)\//.test(value)).map(value => 'public' + value); await commitFiles('Update ' + entry.name, ['data/apps.json', ...media]); send(res, 200, { ok: true, apps: list, published: true, message: 'Изменения отправлены в GitHub. Сайт обновится после завершения GitHub Actions.' }); return; }
         catch (error) { send(res, 200, { ok: true, apps: list, published: false, warning: 'Изменения сохранены локально, но не отправлены на сайт: ' + error.message }); return; }
       }
       send(res, 200, { ok: true, apps: list, published: false, message: 'Черновик сохранён локально.' }); return;
@@ -131,7 +131,7 @@ async function handler(req, res) {
         if (!asset || asset.digest !== 'sha256:' + ipaSha) return send(res, 409, { error: 'Релиз ' + tag + ' уже существует, но загруженный IPA отличается. Укажите новую версию из самого IPA.' });
         app.downloadUrl = asset.browser_download_url; app.size = asset.size; app.sha256 = ipaSha; app.updatedDate = today; app.addedDate = prior?.addedDate || today; app.changelog = prior?.changelog || input.changelog || [];
         if (ix >= 0) list[ix] = app; else list.unshift(app);
-        try { fs.writeFileSync(appsPath, JSON.stringify(list, null, 2) + '\n'); emit('Проверка IPA', 'done', (asset.size / 1048576).toFixed(1) + ' МБ'); emit('GitHub Release', 'done', 'Использован существующий релиз ' + tag); emit('Обновление JSON', 'done'); const media = [app.icon, ...app.screenshots].filter(value => /^\/(icons|screenshots)\//.test(value)).map(value => value.slice(1)); await commitFiles('Restore ' + app.name + ' ' + app.version + ' to catalog', ['data/apps.json', ...media]); emit('Git commit и push', 'done', 'GitHub Actions обновит сайт.'); }
+        try { fs.writeFileSync(appsPath, JSON.stringify(list, null, 2) + '\n'); emit('Проверка IPA', 'done', (asset.size / 1048576).toFixed(1) + ' МБ'); emit('GitHub Release', 'done', 'Использован существующий релиз ' + tag); emit('Обновление JSON', 'done'); const media = [app.icon, ...app.screenshots].filter(value => /^\/(icons|screenshots)\//.test(value)).map(value => 'public' + value); await commitFiles('Restore ' + app.name + ' ' + app.version + ' to catalog', ['data/apps.json', ...media]); emit('Git commit и push', 'done', 'GitHub Actions обновит сайт.'); }
         catch (error) { emit('Git commit и push', 'error', error.message); return send(res, 500, { error: 'Релиз найден, но запись каталога не удалось отправить: ' + error.message, milestones, partial: true }); }
         send(res, 200, { ok: true, milestones, app, reusedRelease: true }); return;
       }
@@ -141,7 +141,7 @@ async function handler(req, res) {
       if (ix >= 0) list[ix] = app; else list.unshift(app);
       try { emit('Обновление JSON', 'running'); fs.writeFileSync(appsPath, JSON.stringify(list, null, 2) + '\n'); emit('Обновление JSON', 'done'); }
       catch (error) { emit('Обновление JSON', 'error', error.message); return send(res, 500, { error: 'Release создан, но JSON не удалось сохранить: ' + error.message, milestones, partial: true }); }
-      try { emit('Git commit и push', 'running'); const media = [app.icon, ...app.screenshots].filter(value => /^\/(icons|screenshots)\//.test(value)).map(value => value.slice(1)); await commitFiles('Publish ' + app.name + ' ' + app.version, ['data/apps.json', ...media]); emit('Git commit и push', 'done', 'GitHub Actions запустит публикацию сайта.'); }
+      try { emit('Git commit и push', 'running'); const media = [app.icon, ...app.screenshots].filter(value => /^\/(icons|screenshots)\//.test(value)).map(value => 'public' + value); await commitFiles('Publish ' + app.name + ' ' + app.version, ['data/apps.json', ...media]); emit('Git commit и push', 'done', 'GitHub Actions запустит публикацию сайта.'); }
       catch (error) { emit('Git commit и push', 'error', error.message); return send(res, 500, { error: 'Release создан, но изменение каталога не отправлено в GitHub: ' + error.message, milestones, partial: true }); }
       send(res, 200, { ok: true, milestones, app }); return;
     }
