@@ -29,7 +29,12 @@ async function commitFiles(message, files) { const paths = [...new Set(files)]; 
 
 async function handler(req, res) {
   const url = new URL(req.url, `http://${HOST}:${PORT}`);
-  if (req.method !== 'GET' && req.headers.origin && !['http://127.0.0.1:4178','http://localhost:4178'].includes(req.headers.origin)) return send(res, 403, { error: 'Запрос разрешён только из локальной панели.' });
+  if (req.method !== 'GET' && req.headers.origin) {
+    let origin;
+    try { origin = new URL(req.headers.origin); } catch { return send(res, 403, { error: 'Запрос разрешён только из локальной панели.' }); }
+    const isLoopback = ['127.0.0.1', 'localhost', '[::1]'].includes(origin.hostname);
+    if (origin.protocol !== 'http:' || !isLoopback || origin.port !== String(PORT)) return send(res, 403, { error: 'Запрос разрешён только из локальной панели.' });
+  }
   try {
     if (req.method === 'GET' && url.pathname === '/api/status') {
       const [git, gh] = await Promise.allSettled([run('git', ['--version']), run('gh', ['--version'])]);
