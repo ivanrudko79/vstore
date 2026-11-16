@@ -1,0 +1,62 @@
+[
+  {
+    "id": "finance",
+    "name": "Финансы",
+    "icon": "◈",
+    "description": "Банки и финансы"
+  },
+  {
+    "id": "social",
+    "name": "Социальные сети",
+    "icon": "◎",
+    "description": "Общение и сообщества"
+  },
+  {
+    "id": "messengers",
+    "name": "Мессенджеры",
+    "icon": "↗",
+    "description": "Переписка и звонки"
+  },
+  {
+    "id": "entertainment",
+    "name": "Развлечения",
+    "icon": "✦",
+    "description": "Видео и досуг"
+  },
+  {
+    "id": "media",
+    "name": "Мультимедиа",
+    "icon": "♫",
+    "description": "Музыка и творчество"
+  },
+  {
+    "id": "games",
+    "name": "Игры",
+    "icon": "⌘",
+    "description": "Игры для iPhone"
+  },
+  {
+    "id": "utilities",
+    "name": "Утилиты",
+    "icon": "⌁",
+    "description": "Полезные инструменты"
+  },
+  {
+    "id": "productivity",
+    "name": "Продуктивность",
+    "icon": "▤",
+    "description": "Работа и заметки"
+  },
+  {
+    "id": "navigation",
+    "name": "Навигация",
+    "icon": "➤",
+    "description": "Карты и маршруты"
+  },
+  {
+    "id": "other",
+    "name": "Другое",
+    "icon": "＋",
+    "description": "Другие приложения"
+  }
+]

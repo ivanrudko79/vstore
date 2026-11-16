@@ -1,0 +1,9 @@
+node_modules/
+dist/
+admin/node_modules/
+work/
+.env
+.env.local
+*.log
+.DS_Store
+Thumbs.db
