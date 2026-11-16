@@ -2,6 +2,7 @@
 setlocal
 chcp 65001 >nul
 cd /d "%~dp0"
+if exist "%ProgramFiles%\Git\cmd\git.exe" set "PATH=%ProgramFiles%\Git\cmd;%PATH%"
 if exist "%ProgramFiles%\GitHub CLI\gh.exe" set "PATH=%ProgramFiles%\GitHub CLI;%PATH%"
 where node >nul 2>nul
 if errorlevel 1 (
