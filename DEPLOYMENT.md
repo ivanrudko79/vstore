@@ -8,14 +8,12 @@
 
 Pages на бесплатном тарифе обычно требует публичный репозиторий; весь исходный код и метаданные каталога в нём будут доступны всем. Владелец IPA несёт ответственность за право распространения. Pages — статический хостинг, не backend; GitHub Releases имеет собственные квоты и ограничения, поэтому проверьте актуальные условия GitHub перед загрузкой больших IPA.
 
-1. Создайте публичный репозиторий GitHub с именем `V-Store`.
-2. Установите Git и GitHub CLI. Из папки проекта выполните `gh auth login`, `git init -b main`, `git add .`, `git commit -m "Initial VStore project"`, `gh repo create V-Store --public --source=. --remote=origin --push`.
-3. В настройках репозитория откройте **Settings → Pages** и задайте **Source: GitHub Actions**.
-4. Workflow `.github/workflows/deploy.yml` запускает `npm ci`, TypeScript-проверку и build до deploy. Ошибки проверки останавливают публикацию.
-5. Для проекта-репозитория base path уже равен `/V-Store/`. Если имя репозитория изменится, задайте `VITE_BASE_PATH` при сборке, например `/new-name/`. Для собственного домена выставьте `/` и добавьте домен в Pages.
-6. После каждого push в `main` дождитесь успешных этапов build и deploy во вкладке Actions.
+1. Репозиторий уже создан: `ivanrudko79/vstore`.
+2. Один раз откройте в репозитории **Settings → Pages** и под **Build and deployment → Source** выберите **GitHub Actions**. Это включает Pages и позволяет `actions/configure-pages` получить настройки сайта.
+3. Workflow `.github/workflows/deploy.yml` запускает `npm ci`, проверку данных, TypeScript и сборку до deploy. Base path берётся из вывода `configure-pages`, поэтому соответствует имени репозитория и пользовательскому домену.
+4. После каждого push в `main` дождитесь успешных этапов build и deploy во вкладке Actions.
 
-GitHub CLI отсутствует на компьютере в момент подготовки проекта. Установите его с [официальной страницы](https://cli.github.com/) и завершите `gh auth login`. Git и Node.js уже обнаружены.
+Локальная панель может выпускать IPA только после установки GitHub CLI и авторизации. Это не требуется, чтобы GitHub Actions опубликовал сам сайт.
 
 ## IPA Releases и ограничения
 
@@ -23,4 +21,4 @@ GitHub CLI отсутствует на компьютере в момент по
 
 ## SEO, домен и социальные карточки
 
-Замените `username` в `index.html`, `public/robots.txt` и `public/sitemap.xml` на имя GitHub и проверьте canonical/OG URL. Публичный сайт на GitHub Pages отдаёт один `index.html`; поэтому отдельные серверные Open Graph карточки для каждого SPA-маршрута не создаются. Для индивидуальных карточек нужен генератор статических HTML страниц на этапе сборки или серверный рендеринг. На первом этапе задана общая карточка сайта.
+Canonical, sitemap и Open Graph настроены для `https://ivanrudko79.github.io/vstore/`. Публичный сайт на GitHub Pages отдаёт один `index.html`; поэтому отдельные серверные Open Graph карточки для каждого SPA-маршрута не создаются. Для индивидуальных карточек нужен генератор статических HTML страниц на этапе сборки или серверный рендеринг. На первом этапе задана общая карточка сайта.

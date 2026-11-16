@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://username.github.io/V-Store/sitemap.xml
+Sitemap: https://ivanrudko79.github.io/vstore/sitemap.xml
